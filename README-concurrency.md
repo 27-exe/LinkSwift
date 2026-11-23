@@ -54,16 +54,20 @@
 
 ## 安装
 
-油猴里直接打开这个链接安装：
+油猴里直接打开这个链接安装（**纯 ASCII 文件名，无编码歧义**）：
 
 ```
-https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/%EF%BC%88%E6%94%B9%EF%BC%89%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BE%85%E5%8A%A9.user.js
+https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/linkswift.user.js
 ```
 
-`@updateURL` / `@downloadURL` 已指向本仓库的 `concurrency` 分支，
-**油猴会自动更新**。
+`@updateURL` / `@downloadURL` 已指向同一地址，**油猴会自动更新**。
 
-> 脚本 `@name` 改成了「LinkSwift 并发版」、`@namespace` 改成了
+> 上游的文件名是中文「（改）网盘直链下载助手.user.js」，raw URL 必须
+> percent-encoding。实测油猴的「从 URL 安装」对那种 URL 会报
+> 「无法从该 URL 加载脚本」/ 404（同样地址 curl 能正常取到）。
+> 所以发布产物统一用 ASCII 名 `linkswift.user.js`。
+>
+> 脚本 `@name` 是「LinkSwift 并发版」、`@namespace` 是
 > `github.com/27-exe/linkswift-concurrency` —— 与上游脚本在油猴里是
 > 两个独立条目，不会互相覆盖。要换回上游版，卸载这个再装上游即可。
 
@@ -71,12 +75,17 @@ https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/%EF%BC%88%E6%94%B
 
 ```
 concurrency/                       ← 本分支
-├── （改）网盘直链下载助手.user.js  ← 打好补丁的脚本（主产物）
-├── （改）百度网盘会员青春版.user.js
+├── linkswift.user.js              ← 发布产物（唯一事实源，ASCII 文件名）
+├── README-concurrency.md          ← 本文件
 └── tools/
+    ├── build.py                   ← 构建脚本：取上游 → 打补丁 → 改元数据 → 输出
     ├── apply_linkswift_patch.py   ← 补丁器（幂等，锚点不唯一则报错退出）
-    └── README.md
+    ├── verify_patch.js            ← 行为验证脚本
+    └── .gitignore
 ```
+
+**发布产物不入库上游原名文件** —— 它由 `tools/build.py` 从
+`upstream/dev` 现场生成，避免两份副本不同步。
 
 ## 维护
 
@@ -84,13 +93,13 @@ concurrency/                       ← 本分支
 
 ```bash
 git fetch upstream dev
-git rebase upstream/dev          # 或 git merge upstream/dev
-python3 tools/apply_linkswift_patch.py "（改）网盘直链下载助手.user.js"
-node --check "（改）网盘直链下载助手.user.js"
+python3 tools/build.py --upstream upstream/dev   # 打补丁 + 改元数据 + node --check
+git add linkswift.user.js
+git commit -m "同步上游 dev" && git push origin concurrency
 ```
 
-补丁器**锚点必须唯一命中**，否则直接报错退出、不做模糊匹配 —— 上游改了
-结构也不会把脚本改坏，只会要求人工合并。
+不需要 rebase —— `concurrency` 分支与 `upstream/dev` 各自独立演进，
+只通过 `build.py` 传递内容。
 
 ### 补丁器覆盖的两个上游变体
 
