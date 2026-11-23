@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          LinkSwift 并发版
 // @namespace     github.com/27-exe/linkswift-concurrency
-// @version       1.1.4-conc.2
+// @version       1.1.4-conc.3
 // @downloadURL   https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/linkswift.user.js
 // @updateURL     https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/linkswift.user.js
 // @author        Hmjz100、油小猴（并发补丁：27-exe）
