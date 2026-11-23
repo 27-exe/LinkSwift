@@ -1,8 +1,10 @@
 // ==UserScript==
-// @name              LinkSwift
-// @namespace         github.com/hmjz100
-// @version           1.1.4
-// @author            Hmjz100、油小猴
+// @name          LinkSwift 并发版
+// @namespace     github.com/27-exe/linkswift-concurrency
+// @version       1.1.4-conc.1
+// @downloadURL   https://github.com/27-exe/LinkSwift/raw/concurrency/%EF%BC%88%E6%94%B9%EF%BC%89%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B.user.js
+// @updateURL     https://github.com/27-exe/LinkSwift/raw/concurrency/%EF%BC%88%E6%94%B9%EF%BC%89%E7%BD%91%E7%9B%98%E7%9B%B4%E9%93%BE%E4%B8%8B%E8%BD%BD%E5%8A%A9%E6%89%8B.user.js
+// @author        Hmjz100、油小猴（并发补丁：27-exe）
 // @icon              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cGF0aCBkPSJNMTAzLjYgMTA3LjRjMy41LTIuMiA4LjktNi4xIDEzLjgtMTIuNXM3LjMtMTIuNSA4LjUtMTYuNWMuNS0xLjcgMi4yLTcuNSAyLjItMTQuNyAwLTEwLjEtMy4zLTI1LjEtMTUuNC0zNi44LTE0LjUtMTQtMzIuMS0xNC4zLTM1LjctMTQuMy04IDAtMTUuNyAxLjktMjIuNiA1LjJDNDQgMjMgMzUuNyAzMS40IDMwLjggNDEuN2MtMS4zIDIuOC00IDQuNy03LjEgNS00IC4zLTcuNSA0LjQtOC45IDkuNi0uNSAxLjktMS42IDMuNS0zLjEgNC43QzQuNCA2Ni44IDAgNzUuNyAwIDg1YzAgNi44IDIuMyAxMy4xIDYuMSAxOC4yIDUuNSA3LjQgMTQuMiAxMi4yIDI0IDEyLjJoNDcuMWM0LjQgMCAxMS0uNSAxOC4zLTMuNSAzLjItMS40IDUuOS0zIDguMS00LjV6IiBmaWxsPSIjQTA5OUYwIi8+PHBhdGggZD0iTTExOS44IDY0LjNjLjEtMTcuMS0xMC40LTI4LTEyLjUtMzAuMUM5NSAyMi4xIDc5LjkgMjEuOCA3Ni45IDIxLjhjLTE3LjYgMC0zMy4zIDEwLjUtMzkuOSAyNi43LS42IDEuMy0xLjggMi4zLTMuNCAyLjNoLS40Yy01LjggMC0xMC42IDQuOC0xMC42IDEwLjd2LjVjMCAxLjQtLjggMi42LTEuOSAzLjNDMTMuNCA2OSA4LjggNzYuOCA4LjggODVjMCAxMi4yIDkuOSAyMi4zIDIyLjIgMjIuM2g0NS4yYzMuNi0uMSAxNy42LS45IDI5LjYtMTIgMi45LTIuOCAxMy45LTEzLjcgMTQtMzF6IiBmaWxsPSIjNTc0QUI4Ii8+PHBhdGggZD0iTTExMC44IDU3LjRsLjIgMy4zYzAgMS4zLTEuMSAyLjQtMi4zIDIuNC0xLjMgMC0yLjMtMS4xLTIuMy0yLjRsLS4xLTIuOHYtLjNjMC0xLjIuOS0yLjIgMi4xLTIuM2guM2MuNyAwIDEuMy4zIDEuNy43LS4yLjEuMy41LjQgMS40em0tMy4zLTEwLjNjMCAxLjItMSAyLjMtMi4yIDIuM2gtLjFjLS44IDAtMS42LS41LTItMS4yLTQuNi04LjMtMTMuMy0xMy41LTIyLjgtMTMuNS0xLjIgMC0yLjMtMS0yLjMtMi4ydi0uMWMwLTEuMiAxLTIuMyAyLjItMi4zaC4xYTMwLjM3IDMwLjM3IDAgMCAxIDE1LjggNC40YzQuNiAyLjggOC40IDYuOCAxMS4xIDExLjUuMS4zLjIuNy4yIDEuMXpNODguMyA3My44TDczLjUgOTMuMmMtMS41IDEuOS0zLjUgMy4xLTUuNyAzLjVoLS4yYy0uNC4xLS44LjEtMS4yLjEtLjYgMC0xLjEtLjEtMS42LS4yLTIuMi0uNC00LjItMS43LTUuNi0zLjVMNDQuMyA3My45Yy0yLTIuNi0yLjUtNS40LTEuNC03LjcuMS0uMS4xLS4yLjItLjIgMS4yLTIgMy41LTMuMiA2LjQtMy4yaDYuNnYtNS43YzAtNi44IDQuNy0xMiAxMC45LTEyIDQuOCAwIDguNSAyLjYgMTAuMyA3LjIuNSAxLjMtLjIgMi43LTEuNSAzLjJzLTIuOC0uMS0zLjMtMS40Yy0xLjEtMi43LTIuOS00LTUuNS00LTMuNSAwLTYgMy02IDd2OC4xYzAgLjUtLjIgMS0uNiAxLjQtLjYuNy0xLjcgMS4xLTIuNiAxLjFoLTguNGMtMS4zIDAtMiAuNC0yLjEuNy0uMi40IDAgMS4zLjkgMi40TDYzLjEgOTBjLjkgMS4yIDIuMSAxLjggMy4zIDEuOHMyLjMtLjYgMy4xLTEuN2wxNC44LTE5LjNjLjktMS4xIDEuMS0yIC45LTIuNC0uMi0uMy0uOS0uNy0yLjEtLjdoLTcuNmMtLjkgMC0xLjctLjUtMi4xLTEuMi0uMy0uNC0uNC0uOC0uNC0xLjMgMC0xLjQgMS4xLTIuNSAyLjUtMi41aDcuNmMzLjEgMCA1LjUgMS4zIDYuNiAzLjVsLjMuN2MuNyAyLjEuMSA0LjYtMS43IDYuOXoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=
 // @description       (｡>ᴗ•)✧《也许同类型中最好用？》系列 - 一个基于 JavaScript 的网盘文件下载地址获取工具✨，基于【网盘直链下载助手】修改 | 支持 百度网盘 / 阿里云盘 / 中国移动云盘 / 天翼云盘 / 迅雷云盘 / 光鸭云盘 / 夸克网盘 / UC网盘 / 123云盘 九大网盘 | 开源・自用・去广 | 改界面・添功能・修Bug | 既超越原版，亦是同类中最好用版本！👋
 // @description:zh-CN (｡>ᴗ•)✧《也许同类型中最好用？》系列 - 一个基于 JavaScript 的网盘文件下载地址获取工具✨，基于【网盘直链下载助手】修改 | 支持 百度网盘 / 阿里云盘 / 中国移动云盘 / 天翼云盘 / 迅雷云盘 / 光鸭云盘 / 夸克网盘 / UC网盘 / 123云盘 九大网盘 | 开源・自用・去广 | 改界面・添功能・修Bug | 既超越原版，亦是同类中最好用版本！👋
@@ -12,9 +14,9 @@
 // @license           AGPL-3.0-or-later
 // @source            https://github.com/hmjz100/LinkSwift/
 // @website           https://github.com/hmjz100/LinkSwift/
-// @homepageURL       https://github.com/hmjz100/LinkSwift/
-// @homepage          https://github.com/hmjz100/LinkSwift/
-// @supportURL        https://github.com/hmjz100/LinkSwift/issues
+// @homepageURL   https://github.com/27-exe/LinkSwift
+// @homepage      https://github.com/27-exe/LinkSwift
+// @supportURL    https://github.com/27-exe/LinkSwift/issues
 // @require           https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
 // @require           https://unpkg.com/sweetalert2@11.4.8/dist/sweetalert2.min.js
 // @resource SwalLigt https://unpkg.com/sweetalert2@11.4.8/dist/sweetalert2.min.css
@@ -102,6 +104,26 @@
 // @compatible	      Opera
 // @early-start
 // ==/UserScript==
+// ============================================================================
+// 本分支（concurrency）的改动 —— 相对上游 hmjz100/LinkSwift @ dev (v1.1.4)
+//
+// 1) Aria2 设置弹窗新增「单任务并发数」输入框（data-type="aria2.split"）
+// 2) sendLinkToAria2 的 aria2.addUri options 增加 per-task 选项
+//      split 与 max-connection-per-server
+//
+// 为什么需要：网盘直链是「每连接限速」模型 ——
+//      UC 网盘   每连接约 100 KB/s
+//      夸克网盘  每连接约  10 KB/s
+//    总量 ≈ 并发数 × 每连接限速。上游推给 aria2 时不传并发选项，
+//    完全依赖 aria2 守护进程的全局配置（split=16 时 UC 只有约 1.5 MB/s）。
+//    实测本机：split=384 时 UC 约 37 MB/s（_conns=384_）。
+//
+// 兼容性：配置项留空 / 填 0 / 填非法值时都不传这两个选项，
+//    行为与上游完全一致，退回 aria2 全局配置。
+//
+// 维护：27-exe · 补丁器见 tools/apply_linkswift_patch.py
+// ============================================================================
+
 
 /**
  * @name LinkSwift
@@ -2503,6 +2525,9 @@
 				<label class="${mount} setting-item">
 					<div>存储路径</div>
 					<input type="text" autocomplete="off" placeholder="文件下载后保存路径，例如 D:\\Downloads\\，留空则默认" class="${mount} input swal2-input listener-rpc-input" data-type="aria2.dir" value="">
+				</label>				<label class="${mount} setting-item">
+					<div>单任务并发数</div>
+					<input type="number" autocomplete="off" min="1" max="1024" placeholder="留空=用 aria2 全局配置；UC 建议 384，夸克建议 1024" class="${mount} setting-item input swal2-input listener-rpc-input" data-type="aria2.split" value="">
 				</label>`;
 			Swal.fire({
 				...temp.swalDefault,
@@ -5503,7 +5528,17 @@ button.downloadSubtitle:disabled {
 								...(headers?.["User-Agent"] ? { "user-agent": headers["User-Agent"] } : {}),
 								...(headers?.["Referer"] ? { "referer": headers["Referer"] } : { "referer": `${location.origin}/` }),
 								out: filename,
-								header: header_parts
+								// 单任务并发数：留空/0/非法值时不传，退回 aria2 全局配置。
+						// 网盘直链是「每连接限速」模型（UC ~100KB/s，夸克 ~10KB/s），
+						// 总量 ≈ 并发数 × 每连接限速，所以并发是唯一的加速杠杆。
+						// 用 per-task 选项而非改全局配置，其他任务的并发不受影响。
+						...(function () {
+							let s = parseInt(selected.split, 10);
+							return (Number.isFinite(s) && s > 0)
+								? { split: String(s), "max-connection-per-server": String(s) }
+								: {};
+						})(),
+						header: header_parts
 							}]
 						};
 						if (rpc.token) data.params.unshift(`token:${rpc.token}`);
