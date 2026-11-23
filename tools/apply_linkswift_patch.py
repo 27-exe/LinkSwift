@@ -66,7 +66,7 @@ def build_new_form(m: re.Match) -> str:
         cls = "swal2-input pl-input listener-rpc-input"
     new = f"""				<label class="{mount}">
 					<div>单任务并发数</div>
-					<input type="number" autocomplete="off" min="1" max="1024" placeholder="留空=用 aria2 全局配置；UC 建议 384，夸克建议 1024" class="{cls}" data-type="aria2.split" value="">
+					<input type="number" autocomplete="off" min="1" max="1024" placeholder="留空=全局；UC 384，夸克 1024" class="{cls}" data-type="aria2.split" value="">
 				</label>"""
     return old + new
 
