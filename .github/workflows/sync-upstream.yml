@@ -45,14 +45,21 @@ jobs:
         id: check
         run: |
           UPSTREAM_BLOB=$(git rev-parse 'refs/remotes/upstream/dev:（改）网盘直链下载助手.user.js')
-          PREV_BLOB=$(cat .upstream-blob 2>/dev/null || echo "")
-          echo "上游 blob:     $UPSTREAM_BLOB"
-          echo "上次记录 blob: ${PREV_BLOB:-<无>}"
-          if [ "$UPSTREAM_BLOB" = "$PREV_BLOB" ] && [ "${{ github.event.inputs.force }}" != "true" ]; then
+          # tr -d '\r' 防御：即使 .gitattributes 意外把该文件转成 CRLF，
+          # $(cat) 也不会剥离 \r，会导致每次都误判「有变化」。
+          PREV_BLOB=$(tr -d '\r' < .upstream-blob 2>/dev/null || echo "")
+          echo "上游 blob:     $UPSTREAM_BLOB (len ${#UPSTREAM_BLOB})"
+          echo "上次记录 blob: '$PREV_BLOB' (len ${#PREV_BLOB})"
+          FORCE="${{ github.event.inputs.force }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "force=true，强制重建。"
+          elif [ "$UPSTREAM_BLOB" = "$PREV_BLOB" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "上游无变化，跳过。"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "上游有变化，继续。"
           fi
 
       - name: 计算版本号
@@ -120,11 +127,28 @@ jobs:
           TAG: ${{ steps.ver.outputs.new_tag }}
           UPVER: ${{ steps.ver.outputs.upstream_version }}
         run: |
-          set -e
+          set -u
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git tag -a "$TAG" -m "并发版 $TAG（上游 $UPVER）"
-          git push origin "$TAG"
+
+          # 产物已经推到分支（= 油猴能自动更新），tag/release 是附加价值，
+          # 失败不应让整个 run 变红 —— 只警告。
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "tag $TAG 已存在，跳过创建。"
+          elif git tag -a "$TAG" -m "并发版 $TAG（上游 $UPVER）" 2>&1; then
+            echo "--- git push origin $TAG ---"
+            if ! git push origin "$TAG" 2>&1; then
+              echo "::warning::git push tag 失败，改用 API 创建"
+              git tag -d "$TAG" >/dev/null 2>&1 || true
+              gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+                -f ref="refs/tags/$TAG" \
+                -f sha="${{ github.sha }}" >/dev/null \
+                || echo "::warning::API 创建 tag 也失败：$TAG"
+            fi
+          else
+            echo "::warning::创建本地 tag 失败：$TAG"
+          fi
+
           cat > /tmp/notes.md <<'EOF'
           自动构建：同步上游 dev。
 
@@ -136,8 +160,12 @@ jobs:
 
           许可 AGPL-3.0-or-later，原作者 Hmjz100、油小猴。
           EOF
-          gh release create "$TAG" linkswift.user.js \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "LinkSwift 并发版 $TAG" \
-            --notes-file /tmp/notes.md
-          echo "release 已发布: $TAG"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release $TAG 已存在，跳过创建。"
+          elif ! gh release create "$TAG" linkswift.user.js \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "LinkSwift 并发版 $TAG" \
+              --notes-file /tmp/notes.md 2>&1; then
+            echo "::warning::创建 release 失败：$TAG（产物已推分支，不影响使用）"
+          fi
+          echo "tag/release 阶段结束"

@@ -9,3 +9,5 @@
 *.woff binary -working-tree-encoding -eol
 *.woff2 binary -working-tree-encoding -eol
 *.eot binary -working-tree-encoding -eol
+# CI 用的上游指纹文件：必须保持 LF，否则 $(cat) 会带上 \r 导致比较失败
+.upstream-blob -text
