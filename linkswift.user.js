@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          LinkSwift 并发版
 // @namespace     github.com/27-exe/linkswift-concurrency
-// @version       1.1.4-conc.5
+// @version       1.1.4-conc.6
 // @downloadURL   https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/linkswift.user.js
 // @updateURL     https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/linkswift.user.js
 // @author        Hmjz100、油小猴（并发补丁：27-exe）
@@ -2527,7 +2527,7 @@
 					<input type="text" autocomplete="off" placeholder="文件下载后保存路径，例如 D:\\Downloads\\，留空则默认" class="${mount} input swal2-input listener-rpc-input" data-type="aria2.dir" value="">
 				</label>				<label class="${mount} setting-item">
 					<div>单任务并发数</div>
-					<input type="number" autocomplete="off" min="1" max="1024" placeholder="留空=用 aria2 全局配置；UC 建议 384，夸克建议 1024" class="${mount} setting-item input swal2-input listener-rpc-input" data-type="aria2.split" value="">
+					<input type="number" autocomplete="off" min="1" max="1024" placeholder="留空=全局；UC 384，夸克 1024" class="${mount} setting-item input swal2-input listener-rpc-input" data-type="aria2.split" value="">
 				</label>`;
 			Swal.fire({
 				...temp.swalDefault,
