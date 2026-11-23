@@ -99,6 +99,31 @@ def fetch_upstream(ref: str) -> str:
     return out.stdout.decode("utf-8")
 
 
+def fix_uc_missing_cookie(text: str) -> tuple[str, int]:
+    """补 dev 分支 UC 分支漏传的 Cookie（上游 bug）。
+
+    上游 v1.1.4（dev）重写了 headers 处理，UC 分支给下载器的 headers
+    变成 `{UA, Sec-Ch-Ua}` —— **没有 Cookie**。而取链请求是带
+    `"Cookie": String(document.cookie)` 的，所以取链成功、直链也拿到了，
+    但推给 aria2 后请求不带 Cookie，UC 的 OSS 回调就报
+    `RequestDeniedByCallback: require login [auth not found]` → HTTP 403。
+
+    夸克分支没这个问题（它有 `"Cookie": temp.pugs ? cookie : String(document.cookie)`），
+    stable（v1.1.3）与增强版用的是另一套 convert 模板，本身就带 Cookie。
+
+    命中 0 处 = 该版本不需要此修复（stable / 增强版），直接跳过。
+    """
+    old = ('headers: { "User-Agent": config.$uc.api.ua.main, '
+           '"Sec-Ch-Ua": config.$uc.api.ua.secCh }')
+    new = ('headers: { "User-Agent": config.$uc.api.ua.main, '
+           '"Sec-Ch-Ua": config.$uc.api.ua.secCh, '
+           '"Cookie": String(document.cookie) }')
+    n = text.count(old)
+    if n == 0:
+        return text, 0
+    return text.replace(old, new), n
+
+
 def rewrite_meta(text: str, version: str | None = None) -> str:
     meta = dict(META)
     if version:
@@ -138,6 +163,12 @@ def main():
         text = fetch_upstream(a.upstream)
         text = ap_mod.apply_patch(text)
         print(f"✓ 已对 {a.upstream} 打并发补丁")
+
+    text, nfix = fix_uc_missing_cookie(text)
+    if nfix:
+        print(f"✓ 已修补 dev 版 UC 分支漏传的 Cookie（{nfix} 处）")
+    else:
+        print("· UC 分支 Cookie 正常，无需修补")
 
     text = rewrite_meta(text, a.version)
     final_version = a.version or META["@version"]
