@@ -1,0 +1,143 @@
+name: 同步上游并构建
+
+# 每次检查上游 hmjz100/LinkSwift 的 dev 分支是否有新提交。
+# 有变化 → 打并发补丁 → 改写元数据 → 提交产物 → 打 tag → 发 release。
+# 产物 linkswift.user.js 一旦推到 concurrency 分支，油猴的 @updateURL
+# 就会自动拉到新版本。
+
+on:
+  schedule:
+    # 每天 03:17 UTC（= 11:17 Asia/Shanghai）。上游有时连着几天提交，
+    # 每天一次比每周一次更贴近实际。
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '即使上游无变化也强制重建并发布'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: concurrency
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 取上游 dev
+        run: |
+          git remote add upstream https://github.com/hmjz100/LinkSwift.git 2>/dev/null || true
+          git fetch --no-tags upstream dev:refs/remotes/upstream/dev
+          echo "上游 dev HEAD: $(git rev-parse refs/remotes/upstream/dev)"
+
+      - name: 检测上游是否变化
+        id: check
+        run: |
+          UPSTREAM_BLOB=$(git rev-parse 'refs/remotes/upstream/dev:（改）网盘直链下载助手.user.js')
+          PREV_BLOB=$(cat .upstream-blob 2>/dev/null || echo "")
+          echo "上游 blob:     $UPSTREAM_BLOB"
+          echo "上次记录 blob: ${PREV_BLOB:-<无>}"
+          if [ "$UPSTREAM_BLOB" = "$PREV_BLOB" ] && [ "${{ github.event.inputs.force }}" != "true" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "上游无变化，跳过。"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 计算版本号
+        id: ver
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          UPVER=$(git show 'refs/remotes/upstream/dev:（改）网盘直链下载助手.user.js' \
+                  | grep -m1 -oE '@version[[:space:]]+[0-9A-Za-z._-]+' \
+                  | awk '{print $2}')
+          echo "上游版本: $UPVER"
+          # 已有 tag 里该上游版本的最大 conc 序号 + 1
+          # tag 名带 v 前缀（与上游 v1.1.3 风格一致），@version 不带
+          N=$(git tag --list "v${UPVER}-conc.*" | grep -oE 'conc\.[0-9]+$' | grep -oE '[0-9]+' \
+              | sort -n | tail -1 || echo 0)
+          N=$(( ${N:-0} + 1 ))
+          NEWVER="${UPVER}-conc.${N}"
+          echo "upstream_version=$UPVER" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEWVER" >> "$GITHUB_OUTPUT"
+          echo "new_tag=v${NEWVER}" >> "$GITHUB_OUTPUT"
+          echo "→ 新版本: $NEWVER (tag: v${NEWVER})"
+
+      - name: 构建产物
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          python3 tools/build.py \
+            --upstream refs/remotes/upstream/dev \
+            --version "${{ steps.ver.outputs.new_version }}" \
+            --output linkswift.user.js
+
+      - name: 产物校验
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -e
+          echo "--- 关键字段 ---"
+          grep -m1 -E '@name ' linkswift.user.js
+          grep -m1 -E '@version ' linkswift.user.js
+          grep -m1 -E '@downloadURL ' linkswift.user.js
+          echo "--- 补丁特征 ---"
+          test "$(grep -c 'data-type="aria2.split"' linkswift.user.js)" -ge 1
+          test "$(grep -c 'max-connection-per-server' linkswift.user.js)" -ge 1
+          echo "split 输入框 / 并发选项 均存在"
+          echo "--- 语法 ---"
+          node --check linkswift.user.js && echo "node --check PASS"
+          echo "--- 上游版本指纹 ---"
+          git rev-parse 'refs/remotes/upstream/dev:（改）网盘直链下载助手.user.js' > .upstream-blob
+          cat .upstream-blob
+
+      - name: 提交并推送
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add linkswift.user.js .upstream-blob
+          if git diff --cached --quiet; then
+            echo "无差异，跳过提交。"
+            exit 0
+          fi
+          git commit -m "同步上游 dev @ ${{ steps.ver.outputs.upstream_version }} → ${{ steps.ver.outputs.new_version }}"
+          git push origin concurrency
+
+      - name: 打 tag 并发 release
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.new_tag }}
+          UPVER: ${{ steps.ver.outputs.upstream_version }}
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag -a "$TAG" -m "并发版 $TAG（上游 $UPVER）"
+          git push origin "$TAG"
+          cat > /tmp/notes.md <<'EOF'
+          自动构建：同步上游 dev。
+
+          UC 网盘填 384，夸克网盘填 1024。留空则用 aria2 全局配置（行为与上游一致）。
+
+          安装（油猴直接打开，纯 ASCII 文件名）：
+
+          https://raw.githubusercontent.com/27-exe/LinkSwift/concurrency/linkswift.user.js
+
+          许可 AGPL-3.0-or-later，原作者 Hmjz100、油小猴。
+          EOF
+          gh release create "$TAG" linkswift.user.js \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "LinkSwift 并发版 $TAG" \
+            --notes-file /tmp/notes.md
+          echo "release 已发布: $TAG"

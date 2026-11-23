@@ -99,8 +99,11 @@ def fetch_upstream(ref: str) -> str:
     return out.stdout.decode("utf-8")
 
 
-def rewrite_meta(text: str) -> str:
-    for k, v in META.items():
+def rewrite_meta(text: str, version: str | None = None) -> str:
+    meta = dict(META)
+    if version:
+        meta["@version"] = version
+    for k, v in meta.items():
         pat = re.compile(r"^\s*//\s*" + re.escape(k) + r"\s+.*$", re.M)
         if pat.search(text):
             text = pat.sub(f"// {k:14} {v}", text, count=1)
@@ -119,6 +122,7 @@ def main():
                     help="上游 ref（默认 upstream/dev）")
     ap.add_argument("--from-local", help="从本地文件构建（已打过补丁）")
     ap.add_argument("-o", "--output", default=os.path.join(REPO_ROOT, OUT_NAME))
+    ap.add_argument("--version", help="显式指定 @version（如 1.1.4-conc.2）")
     a = ap.parse_args()
 
     ap_mod = load_patch_module()
@@ -135,7 +139,8 @@ def main():
         text = ap_mod.apply_patch(text)
         print(f"✓ 已对 {a.upstream} 打并发补丁")
 
-    text = rewrite_meta(text)
+    text = rewrite_meta(text, a.version)
+    final_version = a.version or META["@version"]
 
     with open(a.output, "w", encoding="utf-8", newline="") as f:
         f.write(text)
@@ -144,13 +149,14 @@ def main():
     assert 'data-type="aria2.split"' in text, "缺 split 输入框"
     assert '"max-connection-per-server"' in text, "缺并发选项"
     assert META["@downloadURL"] in text, "@downloadURL 未写入"
+    assert final_version in text, "@version 未写入"
     r = subprocess.run(["node", "--check", a.output], capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit(f"node --check 失败:\n{r.stderr[:500]}")
 
     print(f"✓ 构建完成: {a.output}  ({len(text)} 字符, node --check PASS)")
     print(f"  @name        {META['@name']}")
-    print(f"  @version     {META['@version']}")
+    print(f"  @version     {final_version}")
     print(f"  @downloadURL {META['@downloadURL']}")
 
 
